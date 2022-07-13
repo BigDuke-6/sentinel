@@ -1,0 +1,121 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## login in location mapping \n---\n\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "b5e7d908-a594-4a69-9d34-67bcbc8ba79b",
+            "version": "KqlParameterItem/1.0",
+            "name": "LoginStatus",
+            "label": "Login Status ",
+            "type": 2,
+            "isRequired": true,
+            "value": "0",
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::1"
+              ],
+              "showDefault": false
+            },
+            "jsonData": "[{\"value\":\"0\",\"label\":\"success\"},\r\n{\"value\":\"1\",\"label\":\"failed\"}]",
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where TimeGenerated >= ago(90d)\r\n| extend status = case(ResultType == 0, 0, 1)\r\n| where status == '{LoginStatus}'\r\n| evaluate bag_unpack(LocationDetails)\r\n| evaluate bag_unpack(geoCoordinates)",
+        "size": 3,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "map",
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "locInfoColumn": "Location",
+          "latitude": "latitude",
+          "longitude": "longitude",
+          "sizeSettings": "city",
+          "sizeAggregation": "Count",
+          "labelSettings": "state",
+          "legendMetric": "state",
+          "legendAggregation": "Count",
+          "itemColorSettings": {
+            "nodeColorField": "city",
+            "colorAggregation": "Count",
+            "type": "heatmap",
+            "heatmapPalette": "greenRed"
+          }
+        }
+      },
+      "name": "query - 0"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where TimeGenerated >= ago(90d)\r\n| extend status = case(ResultType == 0, 0, 1)\r\n| where status == '{LoginStatus}'\r\n| evaluate bag_unpack(LocationDetails)\r\n| evaluate bag_unpack(geoCoordinates)\r\n| sort by TimeGenerated\r\n| project TimeGenerated, Identity, AppDisplayName, ResultType, ResultDescription, city, state, Location",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 3"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where TimeGenerated >= ago(90d)\r\n| extend status = case(ResultType == 0, \"SuccessLogins\", \"FailedLogin\")\r\n| summarize count() by status, TimeGenerated\r\n| sort by TimeGenerated\r\n\r\n",
+        "size": 0,
+        "timeBrushParameterName": "selectedtime",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "linechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "ResultType",
+              "label": "ResultType"
+            }
+          ]
+        }
+      },
+      "name": "query - 4"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| where TimeGenerated {selectedtime}\r\n| extend status = case(ResultType == 0, 0, 1)\r\n| where status == '{LoginStatus}'\r\n| evaluate bag_unpack(LocationDetails)\r\n| evaluate bag_unpack(geoCoordinates)\r\n| sort by TimeGenerated\r\n| project TimeGenerated, Identity, SignInIdentifier, AppDisplayName, UserAgent, ResultType, ResultDescription, city, state, Location",
+        "size": 0,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "query - 5"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

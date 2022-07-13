@@ -1,0 +1,226 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## Risk Scoring By events \n---\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "47dc3c64-5719-46ab-a653-cf2a412c4e67",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let vipusers = (_GetWatchlist('viplist'));\nvipusers\n| extend userscore = toint(Score)\n| project Username, firstname, lastname, Role, userscore\n| join kind=inner (SecurityAlert\n    | extend ascore = case(AlertSeverity == \"High\", 100, AlertSeverity == \"Medium\", 50, AlertSeverity == \"Low\", 40, 10)\n    | extend ascore = toint(ascore)\n    | extend Entities = parse_json(Entities)\n    | project Entities, ascore, DisplayName, TimeGenerated\n    | mv-expand Entities\n    | extend EType = tostring(Entities.Name)\n    | where isnotempty(EType))\non $left.Username == $right.EType\n| where isnotempty(userscore)\n| extend combscore = userscore + ascore\n| extend combscorestatus = case(combscore between(80 .. 100), strcat(\" \", combscore, \" \", \"🤡\",\" Low Risk\", \" \", \"🤡\"), combscore between(100 .. 149), strcat(\" \", combscore, \" \", \"🎃\",\" Med Risk\", \" \", \"🎃\"), strcat(\" \", combscore, \" \", \"☠️\", \"High Risk\", \" \", \"☠️\"))\n| project TimeGenerated, Username, DisplayName, userscore, ascore, combscorestatus\n",
+        "size": 0,
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "userscore",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 10,
+                "max": 75,
+                "palette": "blue",
+                "compositeBarSettings": {
+                  "labelText": "",
+                  "columnSettings": []
+                }
+              }
+            },
+            {
+              "columnMatch": "ascore",
+              "formatter": 4,
+              "formatOptions": {
+                "min": 10,
+                "max": 150,
+                "palette": "orange"
+              }
+            }
+          ],
+          "sortBy": [
+            {
+              "itemKey": "TimeGenerated",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "TimeGenerated",
+            "sortOrder": 2
+          }
+        ]
+      },
+      "name": "query - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "//Use Case 1 Create incidents when a \"risk object\" Computer/Host cross a threshold of 100 risk points in a 24 hour period.\r\nlet Aggregate_Host_Scores = SecurityAlert\r\n| where TimeGenerated >= ago(90d)\r\n| mv-expand bagexpansion=array todynamic(Entities)\r\n| where tostring(Entities.Type) == \"account\"\r\n| extend AccountName = tostring(Entities.Name)\r\n| extend Point_Score = case(AlertSeverity == \"High\", 100, AlertSeverity == \"Medium\", 75, AlertSeverity == \"Low\", 50, 25)\r\n| summarize Aggregate_Score = sum(Point_Score),AlertCount= count() by AccountName;\r\nAggregate_Host_Scores\r\n| where Aggregate_Score >= 100\r\n| join kind=innerunique\r\n(SecurityAlert\r\n| mv-expand bagexpansion=array todynamic(Entities)\r\n| where tostring(Entities.Type) == \"account\"\r\n| extend AccountName = tostring(Entities.Name)\r\n| summarize Alerts = make_set(AlertName) by AccountName\r\n) on $left.AccountName== $right.AccountName\r\n| order by Aggregate_Score desc\r\n| project AccountName,Aggregate_Score,Alerts,AlertCount",
+        "size": 0,
+        "title": "Score by Account",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Aggregate_Score",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "red"
+              }
+            },
+            {
+              "columnMatch": "AlertCount",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "coldHot",
+                "compositeBarSettings": {
+                  "labelText": "",
+                  "columnSettings": []
+                }
+              }
+            }
+          ]
+        }
+      },
+      "customWidth": "50",
+      "name": "use case 1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "//Use Case 1 Create incidents when a \"risk object\" Computer/Host cross a threshold of 100 risk points in a 24 hour period.\r\nlet Aggregate_Host_Scores = SecurityAlert\r\n| where TimeGenerated >= ago(90d)\r\n| mv-expand bagexpansion=array todynamic(Entities)\r\n| where tostring(Entities.Type) == \"host\"\r\n| extend HostName = tostring(Entities.HostName)\r\n| extend Point_Score = case(AlertSeverity == \"High\", 100, AlertSeverity == \"Medium\", 75, AlertSeverity == \"Low\", 50, 25)\r\n| summarize Aggregate_Score = sum(Point_Score),AlertCount= count() by HostName;\r\nAggregate_Host_Scores\r\n| where Aggregate_Score >= 100\r\n| join kind=innerunique\r\n(SecurityAlert\r\n| mv-expand bagexpansion=array todynamic(Entities)\r\n| where tostring(Entities.Type) == \"host\"\r\n| extend HostName = tostring(Entities.HostName)\r\n| summarize Alerts = make_set(AlertName) by HostName\r\n) on $left.HostName== $right.HostName\r\n| order by Aggregate_Score desc\r\n| project HostName,Aggregate_Score,Alerts,AlertCount",
+        "size": 0,
+        "title": "Score by Host",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Aggregate_Score",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "red"
+              }
+            },
+            {
+              "columnMatch": "AlertCount",
+              "formatter": 4,
+              "formatOptions": {
+                "palette": "coldHot"
+              }
+            }
+          ]
+        }
+      },
+      "customWidth": "50",
+      "name": "use case 1.1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| where TimeGenerated >= ago(90d)\r\n| mv-expand bagexpansion=array todynamic(Entities)\r\n| where tostring(Entities.Type) == \"account\"\r\n| extend AccountName = tostring(Entities.Name)\r\n| extend TacticsPack = split(Tactics,\",\")\r\n| mv-expand bagexpansion=array todynamic(TacticsPack)\r\n| summarize TacticsCount = dcount(tostring(TacticsPack)),AggregateTactics= make_set(TacticsPack) by AccountName\r\n| where TacticsCount >= 3\r\n| order by TacticsCount desc, AccountName asc",
+        "size": 0,
+        "title": "Mitre Tactics",
+        "timeContextFromParameter": "TimeRange",
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "use case 1.2"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

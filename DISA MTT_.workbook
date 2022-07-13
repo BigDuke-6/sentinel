@@ -1,0 +1,380 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## DISA Mean Time to Detect mockup\n---\n\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "fc40c13a-d289-48a3-b8b2-7e6d054221b9",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "value": "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a",
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "1ab233f3-36a6-4119-9c08-76baf6ee7c4b",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "value": "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": []
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "a307b88f-a4c5-4f36-b8ff-ae0a9bbca48a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Time_Range",
+            "type": 4,
+            "value": {
+              "durationMs": 2592000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| extend TimeDeltainSeconds = datetime_diff(\"second\",TimeGenerated,StartTime)\r\n| extend TimeDeltainMin = TimeDeltainSeconds / 60\r\n| extend TimeDeltainHours = TimeDeltainMin /60\r\n| summarize Avg_MTTD_Hours=avg(TimeDeltainHours) \r\n| project Avg_MTTD_Hours ",
+        "size": 1,
+        "title": "Security Alert MTT Detect",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "tileSettings": {
+          "showBorder": false
+        }
+      },
+      "customWidth": "20",
+      "name": "MTTD Security Alert"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| project AlertSeverity, ProviderName, AlertName, ResourceId, RemediationSteps, AlertLink\r\n",
+        "size": 0,
+        "title": "Security Alerts",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "sortBy": [
+            {
+              "itemKey": "AlertSeverity",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "AlertSeverity",
+            "sortOrder": 1
+          }
+        ]
+      },
+      "customWidth": "80",
+      "name": "Security Alerts"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "ea8271a5-c766-42e0-b36d-4e2736c6d986",
+            "version": "KqlParameterItem/1.0",
+            "name": "ipaddr",
+            "label": "New IOC IP address",
+            "type": 1,
+            "value": "45.129.136.74",
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "parameters - 4",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "\r\n\r\nIP Address = '{ipaddr}'"
+      },
+      "customWidth": "33",
+      "name": "text - 7",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// Query to get MTTD in hours for Alerts containing IP addr\r\nSecurityAlert\r\n| extend Address_ = tostring(parse_json(Entities)[2].Address)\r\n| where '{ipaddr}' == Address_\r\n| extend TimeDeltainSeconds = datetime_diff(\"second\",TimeGenerated,StartTime)\r\n| extend TimeDeltainMin = TimeDeltainSeconds / 60\r\n| extend TimeDeltainHours = TimeDeltainMin /60\r\n| summarize Avg_MTTD=avg(TimeDeltainHours) \r\n| project Avg_MTTD",
+        "size": 4,
+        "title": "MTTD Hours for IP Address",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "IPaddr query"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| extend Address_ = tostring(parse_json(Entities)[2].Address)\r\n| where Address_ == '{ipaddr}' \r\n| project '{ipaddr}', AlertSeverity, ProviderName, AlertName, ResourceId, RemediationSteps\r\n",
+        "size": 1,
+        "title": "Security Alerts with IP Address",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 6"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// Query to get MTTD in Seconds for Event 4624 successful logon\r\nSecurityEvent\r\n//| where EventID == \"4624\"\r\n| extend TimeDeltainSeconds = datetime_diff(\"second\",TimeCollected, TimeGenerated)\r\n| summarize Avg_MTTD=avg(TimeDeltainSeconds) \r\n| project Avg_MTTD",
+        "size": 0,
+        "title": "Security Event MTTD in Seconds",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "20",
+      "name": "Security Event MTTD"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityEvent\r\n| project EventSourceName, SourceSystem, Activity, Computer, Account, IpAddress",
+        "size": 0,
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "80",
+      "name": "query - 10"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "95aa2919-e88c-4c72-ae70-2aa2e0cb4c25",
+            "version": "KqlParameterItem/1.0",
+            "name": "secevent",
+            "label": "New Security Event IOC",
+            "type": 1,
+            "value": "4688",
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "parameters - 8"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "IOC Event ID = '{secevent}'"
+      },
+      "customWidth": "33",
+      "name": "text - 11"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "// Query to get MTTD in Seconds for Event 4624 successful logon\r\nSecurityEvent\r\n| where EventID == '{secevent}'\r\n| extend TimeDeltainSeconds = datetime_diff(\"second\",TimeCollected, TimeGenerated)\r\n| summarize Avg_MTTD=avg(TimeDeltainSeconds) \r\n| project Avg_MTTD",
+        "size": 4,
+        "title": "MTTD for Event ID in Seconds",
+        "timeContextFromParameter": "Time_Range",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "Security events MTTD in secons"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityEvent\r\n| where EventID == '{secevent}'\r\n| project EventSourceName, SourceSystem, Activity, Computer, Account, IpAddress, Process, CommandLine",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 13"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "3b290c18-dc35-469e-b141-c086f5f4d1f5",
+            "version": "KqlParameterItem/1.0",
+            "name": "fhash",
+            "label": "New IOC File Hash",
+            "type": 1,
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": "12BDD118E40187246E8E719B3DE83B38696E19EF0BF78343E7AD2F14164B4CCE"
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "filehash"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "New IOC filehash = '{fhash}'"
+      },
+      "customWidth": "33",
+      "name": "text - 15"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityEvent\r\n| where FileHash == '{fhash}'\r\n| extend TimeDeltainSeconds = datetime_diff(\"second\",TimeCollected, TimeGenerated)\r\n| summarize Avg_MTTD=avg(TimeDeltainSeconds) \r\n| project Avg_MTTD",
+        "size": 4,
+        "title": "New File Hash IOC MTTD in Seconds",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "33",
+      "name": "security Event File Hash MTTD"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityEvent\r\n| where FileHash == '{fhash}'\r\n| project EventSourceName, Activity, Computer, Process, FilePath, CommandLine, FileHash\r\n//| project EventSourceName, SourceSystem, Activity, Computer, Account, IpAddress, Process, CommandLine\r\n",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 17"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

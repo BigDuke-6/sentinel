@@ -1,0 +1,246 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## DISA IT using Native Device Tables in Sentinel\n---\nUsing the device tables -- DeviceInfo, DeviceLogonEvents, DeviceNetworkInfo, DeviceProcessEvents,  DeviceRegistryEvents, DeviceFileEvents, DeviceFileCertificateInfo, \nDeviceEvents\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "93509fc1-da12-4887-a890-1c2fe1451af4",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "label": "Select Subscription(s)",
+            "type": 6,
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": [
+                "value::1"
+              ],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "defaultValue": "value::1"
+          },
+          {
+            "id": "cc96fb3b-44fa-4724-b70c-e96b31812dff",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "label": "Select Workspace",
+            "type": 5,
+            "isRequired": true,
+            "value": "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla",
+            "typeSettings": {
+              "resourceTypeFilter": {
+                "microsoft.operationalinsights/workspaces": true
+              },
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          },
+          {
+            "id": "67dab4f6-6b22-4469-8d73-89a35ec514ba",
+            "version": "KqlParameterItem/1.0",
+            "name": "Time",
+            "label": "Select Time Range",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 5184000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 2"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\r\n| where OSPlatform <> \"\"\r\n|  summarize count(DeviceName) by OSPlatform",
+        "size": 0,
+        "title": "OS break down",
+        "timeContextFromParameter": "Time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false
+        }
+      },
+      "customWidth": "24",
+      "name": "query - 7"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\r\n| where OSPlatform <> \"\"\r\n| summarize max (OSPlatform) by OSPlatform",
+        "size": 0,
+        "title": "Select OS",
+        "timeContextFromParameter": "Time",
+        "exportFieldName": "OSPlatform",
+        "exportParameterName": "OSPlatform",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "OSPlatform",
+            "formatter": 1
+          },
+          "showBorder": true
+        },
+        "graphSettings": {
+          "type": 0
+        }
+      },
+      "customWidth": "25",
+      "name": "OS Tiles"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\r\n| join DeviceNetworkInfo on DeviceName\r\n| where OSPlatform has '{OSPlatform}'\r\n| summarize max (TimeGenerated) by DeviceName, MacAddress, IPv4Dhcp, PublicIP",
+        "size": 0,
+        "title": "Inventory by OS",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "exportFieldName": "DeviceName",
+        "exportParameterName": "Name",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "customWidth": "50",
+      "name": "query - 6"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "device name = '{Name}'"
+      },
+      "name": "text - 7"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n//| extend HostName_ = tostring(parse_json(Entities)[0].HostName)\r\n| where ResourceId contains '{Name}'",
+        "size": 0,
+        "title": "Security Alerts for Selected machine",
+        "timeContextFromParameter": "Time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 6"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\n| join kind=innerunique DeviceNetworkInfo on DeviceName\n| project DeviceName, MacAddress, OSPlatform, OSVersion, IPv4Dhcp, PublicIP, NetworkAdapterName",
+        "size": 0,
+        "title": "Device Inventory",
+        "timeContextFromParameter": "Time",
+        "exportFieldName": "DeviceName",
+        "exportParameterName": "DeviceName",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "sortBy": [
+            {
+              "itemKey": "MacAddress",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "MacAddress",
+            "sortOrder": 1
+          }
+        ],
+        "tileSettings": {
+          "showBorder": false
+        }
+      },
+      "name": "Device Inventory"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

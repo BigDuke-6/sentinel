@@ -1,0 +1,430 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## DISA IT Tracking Dashboard \n---\n\nWe're pulling info from multiple sources into Sentinel and using the Workbook feature to \ncombine the data and visualize it  "
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "c2e0b49a-74db-4103-aca5-74526fd4fd23",
+            "version": "KqlParameterItem/1.0",
+            "name": "time",
+            "type": 4,
+            "isRequired": true,
+            "value": {
+              "durationMs": 7776000000
+            },
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ],
+              "allowCustom": true
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 1"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "OSInfo_CL\r\n| extend osname = split(OSName_s, \" \")\r\n| mv-expand type = osname[2], version = osname[3], edition = osname[4], misc = osname[5]\r\n| extend type = iif(isempty(type), \"Server\", type)\r\n| extend ['version'] = iif(isempty(['version']), \"2012\", ['version'])\r\n| extend osnamecat = strcat(type, \" \", version, \" \", edition, \" \", misc)\r\n| summarize max (osnamecat) by osnamecat\r\n",
+        "size": 1,
+        "title": "Click on OS Tile for details",
+        "timeContextFromParameter": "time",
+        "exportFieldName": "osnamecat",
+        "exportParameterName": "osnamecat",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "osnamecat",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "count_",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "style": "decimal",
+                "maximumFractionDigits": 2,
+                "maximumSignificantDigits": 3
+              }
+            }
+          },
+          "showBorder": true,
+          "sortCriteriaField": "osnamecat",
+          "sortOrderField": 2
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "Computer",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "MemoryTotal_d",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        }
+      },
+      "customWidth": "50",
+      "name": "System Inventory "
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "OSInfo_CL\r\n| summarize count() by OSName_s\r\n",
+        "size": 1,
+        "title": "OS Summary ",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "Microsoft Windows 10 Pro",
+              "label": "Windows 10"
+            },
+            {
+              "seriesName": "Microsoft Windows Server 2016 Datacenter",
+              "label": "Server 2016"
+            },
+            {
+              "seriesName": "Microsoft Windows Server 2019 Datacenter",
+              "label": "Server 2019"
+            },
+            {
+              "seriesName": "Microsoft Windows 11 Enterprise Insider Preview",
+              "label": "Win 11 preview"
+            },
+            {
+              "seriesName": "",
+              "label": "Serer 2012R2"
+            },
+            {
+              "seriesName": "Microsoft Windows 11 Enterprise",
+              "label": "Win11 Ent"
+            }
+          ]
+        }
+      },
+      "customWidth": "50",
+      "name": "OS Pie chart"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "OSInfo_CL \r\n// part 1 - breaking out OSName_s to fill in blank for 2012\r\n| extend osnames = split(OSName_s, \" \")\r\n| mv-expand type = osnames[2], version = osnames[3], edition = osnames[4], misc = osnames[5]\r\n| extend type = iif(isempty(type), \"Server\", type)\r\n| extend ['version'] = iif(isempty(['version']), \"2012\", ['version'])\r\n| extend osnamecats = strcat(type, \" \", version, \" \", edition, \" \", misc)\r\n// part 2 - bringing in osnamecat parameter from tiles above\r\n| extend osname = '{osnamecat}'\r\n| join kind=innerunique CPUInfo_CL on Computer\r\n| join kind=innerunique MemoryInfo_CL on Computer\r\n| join kind=innerunique DomainInfo_CL on Computer\r\n| where osname has osnamecats\r\n| summarize max (TimeGenerated) by Computer, osname, ADJoined_b, Domain_s, AADJoined_b, OSVersion_s, OSArchitecture_s, CPUName_s, CPUModel_s, CPUSpeed_s, MemoryTotal_d,OSLTSC_s \r\n\r\n",
+        "size": 1,
+        "title": "CLICK ON COMPUTER NAME --Machine details by selected OS ",
+        "timeContextFromParameter": "time",
+        "exportFieldName": "Computer",
+        "exportParameterName": "CompName",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "sortBy": []
+      },
+      "name": "Machine details by selected OS"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert\r\n| extend HostName_ = tostring(parse_json(Entities)[0].HostName)\r\n//| where HostName_ == '{CompName}'\r\n//| project TimeGenerated, '{CompName}', AlertSeverity, AlertName, ProductName, ProviderName, Tactics, AlertLink\r\n",
+        "size": 0,
+        "title": "Security Alerts by Select Host ",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "sortBy": []
+      },
+      "name": "Security Alerts by host"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DomainInfo_CL\r\n| where Computer == '{CompName}'\r\n| summarize max(Computer) by FQDN_s, ADJoined_b, Domain_s, AADJoined_b, TenantName_s",
+        "size": 1,
+        "title": "Azure AD or Windows AD Information ",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "customWidth": "50",
+      "name": "AAD or AD info"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "HDInfo_CL \r\n| where Computer == '{CompName}'\r\n| project VolumeLabel_s, VolumeSize_d",
+        "size": 1,
+        "title": "Drive Info for Selected Computer",
+        "timeContextFromParameter": "time",
+        "exportFieldName": "Name_s",
+        "exportParameterName": "Feature",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart"
+      },
+      "customWidth": "50",
+      "name": "hard Drive info"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "PatchInfo_CL\r\n//| where TimeGenerated >= ago(90d)\r\n| extend nTitle = split(Title_s, \"(\", 0)\r\n| extend rtitle = tostring(nTitle[0])\r\n| where Computer == '{CompName}'\r\n| summarize count() by HotFixID_s, rtitle\r\n| sort by count_ desc",
+        "size": 0,
+        "title": "Installed Patches for Selected Computer",
+        "timeContextFromParameter": "time",
+        "exportFieldName": "HotFixID_s",
+        "exportParameterName": "KB",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "count_",
+              "sortOrder": 2
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "count_",
+            "sortOrder": 2
+          }
+        ]
+      },
+      "customWidth": "33",
+      "name": "patches"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "PatchInfo_CL\r\n| extend nTitle = split(Title_s, \"(\", 0)\r\n| extend rtitle = tostring(nTitle[0])\r\n| where HotFixID_s == '{KB}'\r\n| summarize max('{KB}') by Computer\r\n//| project Computer, HotFixID_s, rtitle",
+        "size": 0,
+        "title": "Related Computers by Selected KB",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "filter": true
+        }
+      },
+      "customWidth": "33",
+      "name": "KBs by Machine"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FeatureInfo_CL \r\n| where Computer == '{CompName}'\r\n| project Name_s, Version_s\r\n",
+        "size": 0,
+        "title": "Installed Features for Selected Computer",
+        "timeContextFromParameter": "time",
+        "exportFieldName": "Name_s",
+        "exportParameterName": "Name_s",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "filter": true
+        },
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "Name_s",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "count_",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "Name_s",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "count_",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        }
+      },
+      "customWidth": "33",
+      "name": "Installed Features"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AppInfo_CL \r\n| where Computer == '{CompName}'\r\n| where ProductName_s !startswith \"Microsoft\" and CompanyName_s !startswith \"Microsoft\"\r\n| project ProductName_s, Version_s, CompanyName_s, InstallLocation_s, InstallationDate_t\r\n| sort by InstallationDate_t",
+        "size": 0,
+        "title": "Installed 3rd party apps (non Microsoft)",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "filter": true,
+          "sortBy": [
+            {
+              "itemKey": "Version_s",
+              "sortOrder": 1
+            }
+          ]
+        },
+        "sortBy": [
+          {
+            "itemKey": "Version_s",
+            "sortOrder": 1
+          }
+        ],
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "ProductName_s",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "count_",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        }
+      },
+      "name": "Non MS apps"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "OSInfo_CL\r\n| extend osnames = split(OSName_s, \" \")\r\n| mv-expand type = osnames[2], version = osnames[3], edition = osnames[4], misc = osnames[5]\r\n| extend type = iif(isempty(type), \"Server\", type)\r\n| extend ['version'] = iif(isempty(['version']), \"2012\", ['version'])\r\n| extend osnamecats = strcat(type, \" \", version, \" \", edition, \" \", misc)\r\n| join kind=innerunique CPUInfo_CL on Computer\r\n| join kind=innerunique MemoryInfo_CL on Computer\r\n| join kind=innerunique DomainInfo_CL on Computer\r\n| summarize max (TimeGenerated) by Computer, osnamecats, ADJoined_b, Domain_s, AADJoined_b, OSVersion_s, OSArchitecture_s, CPUName_s, CPUModel_s, CPUSpeed_s, MemoryTotal_d,OSLTSC_s \r\n\r\n\r\n\r\n\r\n",
+        "size": 2,
+        "title": "Full Inventory - only showing data from last data collection ",
+        "timeContextFromParameter": "time",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "filter": true
+        }
+      },
+      "name": "Full Inventory "
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

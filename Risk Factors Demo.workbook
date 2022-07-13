@@ -1,0 +1,205 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "## RISK FACTORS WORKBOOK PROOF OF CONCEPT\n---\n\n"
+      },
+      "name": "text - 2"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "7280a7f2-7a96-4d73-9a4e-e5ed5603f792",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Linux Risk Factors",
+            "subTarget": "Linux Risk Factors",
+            "style": "link"
+          },
+          {
+            "id": "c70221ce-b536-488c-93db-f50fc35c9551",
+            "cellValue": "Tab",
+            "linkTarget": "parameter",
+            "linkLabel": "Windows Risk Factors",
+            "subTarget": "Windows Risk Factors",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "links - 9"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## Risk Score Based on Watch List \r\n\r\n_GetWatchlist('riskyobjects') \r\n| project SearchKey, basescore, value, score"
+            },
+            "name": "text - 3"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "_GetWatchlist('riskyobjects') \n| project SearchKey, basescore, value, score\n\n\n\n",
+              "size": 1,
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table",
+              "chartSettings": {
+                "xAxis": "value",
+                "showLegend": true
+              }
+            },
+            "name": "query - 2"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Watchlist RiskyObjects query using LinuxAuditLog_CL custom log  "
+            },
+            "name": "text - 4"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let RiskyObjects = (_GetWatchlist('riskyobjects'));\r\nRiskyObjects\r\n| extend score1 = toint(score)\r\n| extend score2 = toint(basescore)\r\n| extend riskscore = score1 + score2\r\n| project SearchKey, comparator, value, score, basescore, riskscore\r\n| join kind=fullouter (LinuxAuditLog_CL\r\n    | where RecordType_s == \"EXECVE\"\r\n    | where a0_s in ('pwd','cd','ss','tail','grep','vi','vim','touch','vmstat','lsof','tcpdump','netstat','htop','iotop','iostat','iptables','whois','finger','apt','apt-get','cat','whoami','find','locate','wget','python','scp','chown','chmod','man','passwd','aureport','updatedb','locate')\r\n    // this list is hard coded but it could be more dymanic using a watchlist \r\n        //and a1_s != \"\"\r\n        //and a2_s !in ('update','dist-upgrade','-qq')\r\n    | extend ConsoleCommand = strcat(a0_s,\" \",a1_s,\" \",a2_s,\" \",a3_s,\" \",a4_s,\" \",a5_s,\" \",a6_s,\" \",a7_s)\r\n    | where ConsoleCommand !contains \"apt-get -qq\"\r\n    | project TimeGenerated, SerialNumber_s, Computer, RecordType_s, ConsoleCommand, a0_s, a1_s, a2_s, a3_s, a4_s, a5_s, a6_s, a7_s\r\n    | join kind= inner\r\n    (LinuxAuditLog_CL\r\n        | where RecordType_s in ('USER_START','USER_LOGIN','USER_END','USER_CMD', 'USER_AUTH', 'USER_ACCT', 'SYSCALL', 'PROCTITLE', 'PATH', 'LOGIN', 'EXECVE', 'CWD', 'CRED_REFR', 'CRED_DISP', 'CRED_ACQ')\r\n        | project TimeGenerated, RecordType_s, SerialNumber_s, audit_user_s, user_name_s , tty_s, success_s)\r\n        on SerialNumber_s\r\n    | summarize make_set(RecordType_s), make_set(tty_s), make_set(success_s), User = make_set(user_name_s), AuditUser = make_set(audit_user_s) by TimeGenerated, SerialNumber_s, Computer, RecordType_s, a0_s, ConsoleCommand \r\n    | extend User = tostring(User[0]), Audit_User = tostring(AuditUser[0])\r\n    | where Audit_User !contains \"unset\" and AuditUser !contains \"unset\" and User !contains \"_apt\"\r\n    | where set_tty_s contains \"pts\")\r\n    on $left.value == $right.a0_s\r\n| summarize arg_max(TimeGenerated, Computer, User, Audit_User, ConsoleCommand, comparator, score, basescore, riskscore) by value\r\n| where isnotempty(TimeGenerated) and isnotempty(value)\r\n| extend riskstatus = case(riskscore between(2 .. 5), strcat(\" \", \"✔️\",\" Low Risk\"), riskscore between(6 .. 10), strcat(\" \", \"💀\",\" Med Risk\"), strcat(\" \", \"💥\", \"High Risk\"))\r\n//| project-away riskscore",
+              "size": 0,
+              "timeContext": {
+                "durationMs": 2592000000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 5"
+          },
+          {
+            "type": 9,
+            "content": {
+              "version": "KqlParameterItem/1.0",
+              "parameters": [
+                {
+                  "id": "eb00f425-5a60-430f-b450-79e0b36c3164",
+                  "version": "KqlParameterItem/1.0",
+                  "name": "TimeRange",
+                  "type": 4,
+                  "isRequired": true,
+                  "value": {
+                    "durationMs": 1209600000
+                  },
+                  "typeSettings": {
+                    "selectableValues": [
+                      {
+                        "durationMs": 300000
+                      },
+                      {
+                        "durationMs": 900000
+                      },
+                      {
+                        "durationMs": 1800000
+                      },
+                      {
+                        "durationMs": 3600000
+                      },
+                      {
+                        "durationMs": 14400000
+                      },
+                      {
+                        "durationMs": 43200000
+                      },
+                      {
+                        "durationMs": 86400000
+                      },
+                      {
+                        "durationMs": 172800000
+                      },
+                      {
+                        "durationMs": 259200000
+                      },
+                      {
+                        "durationMs": 604800000
+                      },
+                      {
+                        "durationMs": 1209600000
+                      },
+                      {
+                        "durationMs": 2419200000
+                      },
+                      {
+                        "durationMs": 2592000000
+                      },
+                      {
+                        "durationMs": 5184000000
+                      },
+                      {
+                        "durationMs": 7776000000
+                      }
+                    ],
+                    "allowCustom": true
+                  },
+                  "timeContext": {
+                    "durationMs": 86400000
+                  }
+                }
+              ],
+              "style": "pills",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "parameters - 8"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let RiskyObjects = (_GetWatchlist('riskyobjects'));\r\nRiskyObjects\r\n| extend score1 = toint(score)\r\n| extend score2 = toint(basescore)\r\n| extend riskscore = score1 + score2\r\n| project SearchKey, comparator, value, score, basescore, riskscore\r\n| join kind=fullouter (LinuxAuditLog_CL\r\n    | where RecordType_s == \"EXECVE\"\r\n    | where a0_s in ('pwd','cd','ss','tail','grep','vi','vim','touch','vmstat','lsof','tcpdump','netstat','htop','iotop','iostat','iptables','whois','finger','apt','apt-get','cat','whoami','find','locate','wget','python','scp','chown','chmod','man','passwd','aureport','updatedb','locate')\r\n        //and a1_s != \"\"\r\n        //and a2_s !in ('update','dist-upgrade','-qq')\r\n    | extend ConsoleCommand = strcat(a0_s,\" \",a1_s,\" \",a2_s,\" \",a3_s,\" \",a4_s,\" \",a5_s,\" \",a6_s,\" \",a7_s)\r\n    | where ConsoleCommand !contains \"apt-get -qq\"\r\n    | project TimeGenerated, SerialNumber_s, Computer, RecordType_s, ConsoleCommand, a0_s, a1_s, a2_s, a3_s, a4_s, a5_s, a6_s, a7_s\r\n    | join kind= inner\r\n    (LinuxAuditLog_CL\r\n        | where RecordType_s in ('USER_START','USER_LOGIN','USER_END','USER_CMD', 'USER_AUTH', 'USER_ACCT', 'SYSCALL', 'PROCTITLE', 'PATH', 'LOGIN', 'EXECVE', 'CWD', 'CRED_REFR', 'CRED_DISP', 'CRED_ACQ')\r\n        | project TimeGenerated, RecordType_s, SerialNumber_s, audit_user_s, user_name_s , tty_s, success_s)\r\n        on SerialNumber_s\r\n    | summarize make_set(RecordType_s), make_set(tty_s), make_set(success_s), User = make_set(user_name_s), AuditUser = make_set(audit_user_s) by TimeGenerated, SerialNumber_s, Computer, RecordType_s, a0_s, ConsoleCommand \r\n    | extend User = tostring(User[0]), Audit_User = tostring(AuditUser[0])\r\n    | where Audit_User !contains \"unset\" and AuditUser !contains \"unset\" and User !contains \"_apt\"\r\n    | where set_tty_s contains \"pts\")\r\n    on $left.value == $right.a0_s\r\n// | summarize arg_max(TimeGenerated, Computer, User, Audit_User, ConsoleCommand, comparator, score, basescore, riskscore) by value\r\n| where isnotempty(TimeGenerated) and isnotempty(value)\r\n| extend riskstatus = case(riskscore between(2 .. 5), strcat(\" \", \"🎃\",\" Low Risk\"), riskscore between(6 .. 10), strcat(\" \", \"💀\",\" Med Risk\"), strcat(\" \", \"☠️☠️☠️\", \"High Risk\"))\r\n| project TimeGenerated, Computer, User, Audit_User, ConsoleCommand, comparator, score, basescore, riskscore, riskstatus",
+              "size": 0,
+              "timeContextFromParameter": "TimeRange",
+              "timeBrushParameterName": "TimeBrush1",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "timechart",
+              "chartSettings": {
+                "xAxis": "TimeGenerated",
+                "yAxis": [
+                  "riskscore"
+                ]
+              }
+            },
+            "name": "query - 7"
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "let RiskyObjects = (_GetWatchlist('riskyobjects'));\r\nRiskyObjects\r\n| extend score1 = toint(score)\r\n| extend score2 = toint(basescore)\r\n| extend riskscore = score1 + score2\r\n| project SearchKey, comparator, value, score, basescore, riskscore\r\n| join kind=fullouter (LinuxAuditLog_CL\r\n    | where RecordType_s == \"EXECVE\"\r\n    | where a0_s in ('pwd','cd','ss','tail','grep','vi','vim','touch','vmstat','lsof','tcpdump','netstat','htop','iotop','iostat','iptables','whois','finger','apt','apt-get','cat','whoami','find','locate','wget','python','scp','chown','chmod','man','passwd','aureport','updatedb','locate')\r\n        //and a1_s != \"\"\r\n        //and a2_s !in ('update','dist-upgrade','-qq')\r\n    | extend ConsoleCommand = strcat(a0_s,\" \",a1_s,\" \",a2_s,\" \",a3_s,\" \",a4_s,\" \",a5_s,\" \",a6_s,\" \",a7_s)\r\n    | where ConsoleCommand !contains \"apt-get -qq\"\r\n    | project TimeGenerated, SerialNumber_s, Computer, RecordType_s, ConsoleCommand, a0_s, a1_s, a2_s, a3_s, a4_s, a5_s, a6_s, a7_s\r\n    | join kind= inner\r\n    (LinuxAuditLog_CL\r\n        | where RecordType_s in ('USER_START','USER_LOGIN','USER_END','USER_CMD', 'USER_AUTH', 'USER_ACCT', 'SYSCALL', 'PROCTITLE', 'PATH', 'LOGIN', 'EXECVE', 'CWD', 'CRED_REFR', 'CRED_DISP', 'CRED_ACQ')\r\n        | project TimeGenerated, RecordType_s, SerialNumber_s, audit_user_s, user_name_s , tty_s, success_s)\r\n        on SerialNumber_s\r\n    | summarize make_set(RecordType_s), make_set(tty_s), make_set(success_s), User = make_set(user_name_s), AuditUser = make_set(audit_user_s) by TimeGenerated, SerialNumber_s, Computer, RecordType_s, a0_s, ConsoleCommand \r\n    | extend User = tostring(User[0]), Audit_User = tostring(AuditUser[0])\r\n    | where Audit_User !contains \"unset\" and AuditUser !contains \"unset\" and User !contains \"_apt\"\r\n    | where set_tty_s contains \"pts\")\r\n    on $left.value == $right.a0_s\r\n// | summarize arg_max(TimeGenerated, Computer, User, Audit_User, ConsoleCommand, comparator, score, basescore, riskscore) by value\r\n| where isnotempty(TimeGenerated) and isnotempty(value)\r\n| extend riskstatus = case(riskscore between(2 .. 5), strcat(\" \", \"🎃\",\" Low Risk\"), riskscore between(6 .. 10), strcat(\" \", \"💀\",\" Med Risk\"), strcat(\" \", \"☠️☠️☠️\", \"High Risk\"))\r\n| project TimeGenerated, Computer, User, Audit_User, ConsoleCommand, comparator, score, basescore, riskscore, riskstatus",
+              "size": 0,
+              "timeContextFromParameter": "TimeBrush1",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "table"
+            },
+            "name": "query - 5"
+          }
+        ]
+      },
+      "name": "Linux Risk Factors"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/d50a5311-8d07-41a7-8a0a-c55fb0dc102a/resourcegroups/sentinelrg/providers/microsoft.operationalinsights/workspaces/sentla"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
